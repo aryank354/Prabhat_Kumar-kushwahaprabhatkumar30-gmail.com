@@ -16,3 +16,16 @@ This approach ensures O(n) time complexity and O(n) space complexity.
 2. (Optional) Edit 'sample_input.txt' with your expression.
 3. Run:
    node solution.js
+
+## 4. Sample Execution Log
+**Input (from code default):**
+"2+3*4"
+
+**Output:**
+14
+
+**Complex Input Test:**
+"(10 + 2) * 3 / 4"
+
+**Output:**
+9   

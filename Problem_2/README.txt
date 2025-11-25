@@ -16,3 +16,19 @@
 3. Run:
    node solution.js
 4. Open `output_map.html` in any web browser.
+
+## 4. Sample Execution Log
+**Input:** File: sample_input.json (Contains raw GPS points with noise)
+
+**Output (Console):**
+Processing Complete.
+- Clean points: 68
+- Jitters removed: 2
+- Idling events: 1
+Map generated at: output_map.html
+
+**Output (Visual):**
+An HTML file (output_map.html) is generated showing:
+- Blue Line: Smooth path
+- Red Dots: Rejected noise points
+- Markers: Idling locations

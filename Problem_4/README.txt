@@ -16,3 +16,13 @@
 2. Save your chart image as 'stock_chart.jpg' in this directory.
 3. Run:
    node solution.js
+
+
+## 4. Sample Execution Log
+**Input Image:** stock_chart.jpg
+**Query Date:** 2025-06-15 12:00
+**Future Date:** 2026-02-26 14:00
+
+**Output:**
+Price at 2025-06-15 12:00 : 145.50 (Approx, based on pixel mapping)
+Predicted price at 2026-02-26 14:00: 178.20 (Based on linear regression of recent trend)   
