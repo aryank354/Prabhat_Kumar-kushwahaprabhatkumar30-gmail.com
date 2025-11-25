@@ -36,3 +36,7 @@ Method 2 (Custom Input):
 
 **Explanation:**
 The algorithm successfully identified the earliest 60-minute window where both participants were available (10:00 to 11:00).
+
+## 5. Time & Space Complexity
+- Time Complexity: O(N log N) - Sorting the busy intervals.
+- Space Complexity: O(N) - Storing the merged busy intervals.

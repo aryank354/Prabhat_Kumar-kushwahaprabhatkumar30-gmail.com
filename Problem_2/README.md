@@ -37,3 +37,7 @@ An HTML file (output_map.html) is generated showing:
 - Blue Line: Smooth path
 - Red Dots: Rejected noise points
 - Markers: Idling locations
+
+## 5. Time & Space Complexity
+- Time Complexity: O(n) - Each GPS point is processed once.
+- Space Complexity: O(n) - Storing processed points and generating the map data.

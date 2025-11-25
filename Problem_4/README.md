@@ -26,3 +26,7 @@
 **Output:**
 Price at 2025-06-15 12:00 : 145.50 (Approx, based on pixel mapping)
 Predicted price at 2026-02-26 14:00: 178.20 (Based on linear regression of recent trend)   
+
+## 5. Time & Space Complexity
+- Time Complexity: O(W*H) - Scanning each pixel in the image (Width x Height).
+- Space Complexity: O(W*H) - Storing extracted data points for regression.

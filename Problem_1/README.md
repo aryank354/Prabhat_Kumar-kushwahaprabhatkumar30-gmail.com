@@ -29,3 +29,8 @@ This approach ensures O(n) time complexity and O(n) space complexity.
 
 **Output:**
 9   
+
+## 5. Time & Space Complexity
+- Time Complexity: O(n)
+- Space Complexity: O(n)
+
