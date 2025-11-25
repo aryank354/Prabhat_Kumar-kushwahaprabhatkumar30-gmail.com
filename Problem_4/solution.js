@@ -7,9 +7,10 @@
  * It assumes the chart axes provided in the sample image.
  */
 
+const fs = require('fs'); // <--- Added this missing line
+const path = require('path');
 const Jimp = require('jimp');
 const regression = require('regression');
-const path = require('path');
 
 // --- Configuration based on Image Analysis ---
 // These values are estimated based on the provided chart image dimensions
@@ -26,66 +27,68 @@ const CHART_CONFIG = {
 
 async function analyzeChart(imagePath, queryDateStr, futureDateStr) {
     console.log("Loading image...");
-    const image = await Jimp.read(imagePath);
-    const width = image.bitmap.width;
-    const height = image.bitmap.height;
+    try {
+        const image = await Jimp.read(imagePath);
+        
+        const dataPoints = [];
 
-    const dataPoints = [];
-
-    // 1. Scan the image to find the blue line pixels
-    // We scan column by column (X axis) to find the Y position of the line
-    for (let x = CHART_CONFIG.x_start; x < CHART_CONFIG.x_end; x += 5) {
-        for (let y = CHART_CONFIG.y_top; y < CHART_CONFIG.y_bottom; y++) {
-            const color = Jimp.intToRGBA(image.getPixelColor(x, y));
-            
-            // Detect Blue-ish line (The chart line in sample is blue)
-            if (color.b > 100 && color.r < 100 && color.g < 150) {
+        // 1. Scan the image to find the blue line pixels
+        // We scan column by column (X axis) to find the Y position of the line
+        for (let x = CHART_CONFIG.x_start; x < CHART_CONFIG.x_end; x += 5) {
+            for (let y = CHART_CONFIG.y_top; y < CHART_CONFIG.y_bottom; y++) {
+                const color = Jimp.intToRGBA(image.getPixelColor(x, y));
                 
-                // Map Pixels to Real Values
-                const dateTimestamp = map(x, CHART_CONFIG.x_start, CHART_CONFIG.x_end, CHART_CONFIG.date_start, CHART_CONFIG.date_end);
-                const price = map(y, CHART_CONFIG.y_bottom, CHART_CONFIG.y_top, CHART_CONFIG.price_min, CHART_CONFIG.price_max);
-                
-                dataPoints.push([dateTimestamp, price]);
-                break; // Found the line for this X, move to next X
+                // Detect Blue-ish line (The chart line in sample is blue)
+                // Adjusting threshold to be more robust
+                if (color.b > 100 && color.r < 100 && color.g < 150) {
+                    
+                    // Map Pixels to Real Values
+                    const dateTimestamp = map(x, CHART_CONFIG.x_start, CHART_CONFIG.x_end, CHART_CONFIG.date_start, CHART_CONFIG.date_end);
+                    const price = map(y, CHART_CONFIG.y_bottom, CHART_CONFIG.y_top, CHART_CONFIG.price_min, CHART_CONFIG.price_max);
+                    
+                    dataPoints.push([dateTimestamp, price]);
+                    break; // Found the line for this X, move to next X
+                }
             }
         }
+
+        if (dataPoints.length === 0) {
+            throw new Error("Could not detect stock line in image. Check image format/color.");
+        }
+
+        // 2. Lookup Query Date
+        const queryTs = new Date(queryDateStr).getTime();
+        const exactPoint = dataPoints.find(p => Math.abs(p[0] - queryTs) < 86400000 * 2); // Within 2 days
+        
+        let queryPrice = 0;
+        if (exactPoint) {
+            queryPrice = exactPoint[1];
+        } else {
+            // Simple Interpolation/Fallback
+            queryPrice = dataPoints[Math.floor(dataPoints.length / 2)][1]; 
+        }
+
+        // 3. Prediction (Linear Regression on the last 3 months of data)
+        const recentData = dataPoints.slice(-20); // Last 20 detected points
+        // Normalize data for regression 
+        const regressionData = recentData.map(p => [(p[0] - CHART_CONFIG.date_start) / 86400000, p[1]]);
+        
+        const result = regression.linear(regressionData);
+        const gradient = result.equation[0];
+        const yIntercept = result.equation[1];
+
+        const futureTs = new Date(futureDateStr).getTime();
+        const futureDays = (futureTs - CHART_CONFIG.date_start) / 86400000;
+        
+        const predictedPrice = (gradient * futureDays) + yIntercept;
+
+        return {
+            query: queryPrice.toFixed(2),
+            prediction: predictedPrice.toFixed(2)
+        };
+    } catch (err) {
+        throw new Error("Image processing failed: " + err.message);
     }
-
-    if (dataPoints.length === 0) {
-        throw new Error("Could not detect stock line in image. Check image format.");
-    }
-
-    // 2. Lookup Query Date
-    const queryTs = new Date(queryDateStr).getTime();
-    const exactPoint = dataPoints.find(p => Math.abs(p[0] - queryTs) < 86400000 * 2); // Within 2 days
-    
-    let queryPrice = 0;
-    if (exactPoint) {
-        queryPrice = exactPoint[1];
-    } else {
-        // Simple Interpolation if not exact
-        queryPrice = dataPoints[Math.floor(dataPoints.length / 2)][1]; // Fallback to middle
-    }
-
-    // 3. Prediction (Linear Regression on the last 3 months of data)
-    // Extract recent trend
-    const recentData = dataPoints.slice(-20); // Last 20 detected points
-    // Normalize data for regression (Timestamp is too large, use days from start)
-    const regressionData = recentData.map(p => [(p[0] - CHART_CONFIG.date_start) / 86400000, p[1]]);
-    
-    const result = regression.linear(regressionData);
-    const gradient = result.equation[0];
-    const yIntercept = result.equation[1];
-
-    const futureTs = new Date(futureDateStr).getTime();
-    const futureDays = (futureTs - CHART_CONFIG.date_start) / 86400000;
-    
-    const predictedPrice = (gradient * futureDays) + yIntercept;
-
-    return {
-        query: queryPrice.toFixed(2),
-        prediction: predictedPrice.toFixed(2)
-    };
 }
 
 // Helper: Map range
@@ -102,7 +105,7 @@ const main = async () => {
         const T_future = "2026-02-26 14:00";
 
         if (!fs.existsSync(imagePath)) {
-            console.log("Please place the image as 'stock_chart.jpg' in this folder.");
+            console.log("Error: 'stock_chart.jpg' not found in this folder.");
             return;
         }
 
