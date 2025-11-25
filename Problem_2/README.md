@@ -1,5 +1,10 @@
 # Problem 2: GPS Data Processing
 
+**Screenshots:**
+![Map Overview](map_overview.jpeg)
+
+![Detailed Trajectory](map_zoom.jpeg)
+
 ## 1. Approach
 1. **Jitter Removal:** I calculated the speed between consecutive points using the Haversine formula (via `geolib`). If the speed exceeded 120 km/h (unrealistic for this context), the point was discarded as noise.
 2. **Idling Detection:** If speed dropped below 3 km/h for more than 120 seconds, the start of that sequence is marked as an idling point.
